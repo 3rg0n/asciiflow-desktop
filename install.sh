@@ -23,14 +23,38 @@ case "$(uname -s):$(uname -m)" in
     Darwin:x86_64) platform=macos-x86_64 ;;
     *) printf 'This platform has no matching package. See the source build instructions.\n' >&2; exit 1 ;;
 esac
-repo_dir=$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)
-release_dir="$repo_dir/dist/$version"
 package="asciiflow-desktop-$version-$platform.tar.gz"
-archive="$release_dir/$package"
-if [ ! -f "$archive" ] || [ ! -f "$release_dir/SHA256SUMS" ]; then
-    printf 'Missing package or checksum for %s in %s.\n' "$platform" "$release_dir" >&2
-    exit 1
+download_dir=
+staged=
+trap 'rm -f -- "$staged"; [ -z "$download_dir" ] || rm -rf -- "$download_dir"' EXIT
+# Use the package in a checkout of this repository when the script runs from
+# one. Otherwise, as with `curl ... | sh`, download it from the GitHub release.
+release_dir=
+if [ -f "$0" ]; then
+    release_dir="$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)/dist/$version"
 fi
+if [ -z "$release_dir" ] || [ ! -f "$release_dir/$package" ] || [ ! -f "$release_dir/SHA256SUMS" ]; then
+    base_url=${ASCIIFLOW_RELEASE_URL:-https://github.com/3rg0n/asciiflow-desktop/releases/download/$version}
+    download_dir=$(mktemp -d "${TMPDIR:-/tmp}/asciiflow.XXXXXXXX")
+    release_dir=$download_dir
+    for file in "$package" SHA256SUMS; do
+        if command -v curl >/dev/null 2>&1; then
+            case "$base_url" in
+                https://*) curl -fsSL --proto '=https' --tlsv1.2 -o "$download_dir/$file" "$base_url/$file" ;;
+                *) curl -fsSL -o "$download_dir/$file" "$base_url/$file" ;;
+            esac
+        elif command -v wget >/dev/null 2>&1; then
+            wget -q -O "$download_dir/$file" "$base_url/$file"
+        else
+            printf 'Install curl or wget to download %s.\n' "$package" >&2
+            exit 1
+        fi || {
+            printf 'Could not download %s from %s.\n' "$file" "$base_url" >&2
+            exit 1
+        }
+    done
+fi
+archive="$release_dir/$package"
 expected=$(awk -v package="$package" '$2 == package { print tolower($1); exit }' "$release_dir/SHA256SUMS")
 if command -v sha256sum >/dev/null 2>&1; then
     checksum=$(sha256sum < "$archive")
@@ -46,7 +70,6 @@ fi
 mkdir -p -- "$install_dir"
 install_dir=$(CDPATH='' cd -- "$install_dir" && pwd)
 staged=$(mktemp "$install_dir/.asciiflow.XXXXXXXX")
-trap 'rm -f -- "$staged"' EXIT
 tar -xOf "$archive" asciiflow-desktop > "$staged"
 chmod 755 "$staged"
 mv -f -- "$staged" "$install_dir/asciiflow-desktop"

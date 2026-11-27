@@ -22,7 +22,7 @@ This record covers the native build and end-to-end checks for `asciiflow-desktop
 | `cargo fmt --all --check` | Pass |
 | `cargo clippy --locked --all-targets -- -D warnings` | Pass |
 
-The executable is a Mach-O `arm64` binary with a minimum deployment target of macOS 11.0. It links only system frameworks and libraries, including AppKit, Metal, QuartzCore, CoreText, and `libSystem`. The linker signed it ad hoc. It isn't notarized, so `spctl` rejects it and Gatekeeper blocks a quarantined copy. Clearing `com.apple.quarantine` lets it launch, and the installer path never adds the flag.
+The executable is a Mach-O `arm64` binary with a minimum deployment target of macOS 11.0. It links only system frameworks and libraries, including AppKit, Metal, QuartzCore, CoreText, and `libSystem`. The linker signed it ad hoc. It isn't notarized, so `spctl` rejects it and Gatekeeper blocks a quarantined copy. Clearing `com.apple.quarantine` lets it launch. Installing with `install.sh`, either from a checkout or piped from `curl`, never sets the flag.
 
 Cargo reports a future-incompatibility warning for the transitive `block` 0.1.6 and `proc-macro-error2` 2.0.1 crates. The warning doesn't affect this build.
 
@@ -53,7 +53,7 @@ The review screen showed the returned group, nodes, edges, and warning. Changing
 
 ## Findings
 
-- The build defines no macOS app menu, so `Cmd+Q` and the app menu have no Quit command. Closing the window saves and quits. The README documents this for 0.1.0.
+- The build defines no macOS app menu, so `Cmd+Q` and the app menu have no Quit command. Closing the window saves and quits. Later builds add the Quit command with `Cmd+Q`, which uses the same save check.
 - The native Save dialog shows the suggested `diagram.txt` as `diagram`, because macOS hides the known extension. The saved file is named `diagram.txt`.
 
 ## Screenshots

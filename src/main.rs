@@ -26,12 +26,15 @@ use gpui::{
     App, Application, Bounds, ClipboardItem, ContentMask, Context, CursorStyle, Div,
     ElementInputHandler, FontWeight, Image, ImageFormat, KeyDownEvent, MouseButton, MouseDownEvent,
     MouseMoveEvent, MouseUpEvent, Pixels, Point as UiPoint, Render, ScrollWheelEvent, SharedString,
-    Stateful, TextRun, TitlebarOptions, Window, WindowBounds, WindowOptions,
+    Stateful, TextRun, TitlebarOptions, Window, WindowBounds, WindowOptions, actions,
     canvas as paint_canvas, div, fill, font, img, point, prelude::*, px, rgb, size,
 };
 use icons::Icon;
 
 const APP_NAME: &str = "ASCIIFlow Desktop";
+
+actions!(asciiflow, [Quit]);
+
 const BACKGROUND: u32 = 0xefede7;
 const PANEL: u32 = 0xf9f8f4;
 const PAPER: u32 = 0xfffdf8;
@@ -1352,7 +1355,7 @@ fn main() {
             ..Default::default()
         };
 
-        if let Err(error) = cx.open_window(options, |window, cx| {
+        let window = match cx.open_window(options, |window, cx| {
             let editor = cx.new(|cx| Editor::new(window, cx));
             let closing = editor.downgrade();
             window.on_window_should_close(cx, move |window, cx| {
@@ -1362,9 +1365,39 @@ fn main() {
             });
             editor
         }) {
-            eprintln!("Could not open {APP_NAME}: {error}");
-            cx.quit();
-            return;
+            Ok(window) => window,
+            Err(error) => {
+                eprintln!("Could not open {APP_NAME}: {error}");
+                cx.quit();
+                return;
+            }
+        };
+        // Quit through the same save check as closing the window. If the save
+        // fails, the editor asks first and closing the window ends the app.
+        // Defer the check because the action can arrive while the window is
+        // still handling the key event.
+        cx.on_action(move |_: &Quit, cx| {
+            cx.defer(move |cx| {
+                match window.update(cx, |editor, window, cx| editor.request_close(window, cx)) {
+                    Ok(true) => cx.quit(),
+                    Ok(false) => {}
+                    Err(_) if cx.windows().is_empty() => cx.quit(),
+                    Err(_) => {}
+                }
+            });
+        });
+        #[cfg(target_os = "macos")]
+        {
+            use gpui::{Menu, MenuItem, SystemMenuType};
+            cx.bind_keys([gpui::KeyBinding::new("cmd-q", Quit, None)]);
+            cx.set_menus(vec![Menu {
+                name: APP_NAME.into(),
+                items: vec![
+                    MenuItem::os_submenu("Services", SystemMenuType::Services),
+                    MenuItem::separator(),
+                    MenuItem::action(format!("Quit {APP_NAME}"), Quit),
+                ],
+            }]);
         }
         cx.on_window_closed(|cx| {
             if cx.windows().is_empty() {

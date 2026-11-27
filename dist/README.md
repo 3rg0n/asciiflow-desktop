@@ -14,3 +14,5 @@ Each archive puts the executable at its root and includes the upstream artwork n
 The Linux x86-64 package is built on Debian 12 with glibc 2.36. It needs a compatible Linux desktop, a Vulkan driver, and the system font and X11/Wayland libraries. The native file picker also needs a desktop portal. The Windows package is a console-free GUI executable.
 
 The macOS Apple Silicon package is built natively with full Xcode and the Metal toolchain. Its minimum deployment target is macOS 11. It is ad-hoc signed without notarization. The macOS Intel package is pending native verification. See [docs/verification](../docs/verification) for platform test records.
+
+`install.sh` uses the package in `dist/<version>/` when it runs from a checkout. Otherwise it downloads the package and `SHA256SUMS` from the matching GitHub Release over HTTPS. Set `ASCIIFLOW_RELEASE_URL` to a directory URL that holds both files to install from a mirror. Each release must include the updated `SHA256SUMS` as an asset.
