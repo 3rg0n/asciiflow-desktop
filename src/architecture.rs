@@ -118,7 +118,12 @@ pub struct Edge {
     pub label: Option<String>,
 }
 
-pub fn convert_ascii(config: &ConversionConfig, ascii: &str) -> Result<ArchitectureGraph, String> {
+pub struct Conversion {
+    pub graph: ArchitectureGraph,
+    pub reported_model: Option<String>,
+}
+
+pub fn convert_ascii(config: &ConversionConfig, ascii: &str) -> Result<Conversion, String> {
     if ascii.trim().is_empty() {
         return Err("Select some diagram text to convert.".into());
     }
@@ -192,6 +197,8 @@ pub fn convert_ascii(config: &ConversionConfig, ascii: &str) -> Result<Architect
     #[derive(Deserialize)]
     struct Completion {
         choices: Vec<Choice>,
+        #[serde(default)]
+        model: serde_json::Value,
     }
     #[derive(Deserialize)]
     struct Choice {
@@ -221,7 +228,19 @@ pub fn convert_ascii(config: &ConversionConfig, ascii: &str) -> Result<Architect
         .content
         .as_deref()
         .ok_or("The model returned no diagram.")?;
-    parse_graph(content)
+    let reported_model = completion
+        .model
+        .as_str()
+        .map(str::trim)
+        .filter(|model| {
+            validate_text(model, 256, "reported model").is_ok()
+                && !model.chars().any(char::is_control)
+        })
+        .map(str::to_owned);
+    Ok(Conversion {
+        graph: parse_graph(content)?,
+        reported_model,
+    })
 }
 
 fn graph_schema() -> serde_json::Value {
@@ -412,7 +431,8 @@ mod tests {
             strict_schema: false,
         };
         let graph = convert_ascii(&config, "[Client] ---- Request ----> [Service]")
-            .expect("the endpoint should return a valid architecture graph");
+            .expect("the endpoint should return a valid architecture graph")
+            .graph;
         let node_id = |name: &str| {
             graph
                 .nodes
@@ -524,14 +544,19 @@ mod tests {
             let mut request_body = vec![0u8; content_length];
             stream.read_exact(&mut request_body).unwrap();
             let request: serde_json::Value = serde_json::from_slice(&request_body).unwrap();
-            let body = json!({"choices":[{"message":{"content":format!("```json\n{SAMPLE_GRAPH}\n```")}}]}).to_string();
+            let body = json!({"model":"provider-model-version", "choices":[{"message":{"content":format!("```json\n{SAMPLE_GRAPH}\n```")}}]}).to_string();
             write!(socket, "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}", body.len()).unwrap();
             assert!(authenticated);
             assert_eq!(request["model"], "local-test-model");
             assert_eq!(request["messages"][1]["content"], source);
         });
-        let graph = convert_ascii(&config(endpoint), source).unwrap();
+        let converted = convert_ascii(&config(endpoint), source).unwrap();
         server.join().unwrap();
+        assert_eq!(
+            converted.reported_model.as_deref(),
+            Some("provider-model-version")
+        );
+        let graph = converted.graph;
         assert_eq!(graph.nodes.len(), 4);
         assert_eq!(graph.groups[1].parent.as_deref(), Some("edge"));
         assert_eq!(graph.edges[1].label.as_deref(), Some("Submit order"));

@@ -13,6 +13,7 @@ mod entry;
 mod icons;
 mod image_export;
 mod mermaid;
+mod settings;
 mod templates;
 mod text_files;
 mod text_input;
@@ -131,6 +132,7 @@ enum Panel {
     Drawings,
     Export,
     Ai,
+    Settings,
     Templates,
     Review,
     Mermaid,
@@ -199,6 +201,8 @@ struct Editor {
     _endpoint_tracking: gpui::Subscription,
     model: gpui::Entity<Entry>,
     api_key: gpui::Entity<Entry>,
+    settings_pending: bool,
+    saved_key_unread: bool,
     conversion_pending: bool,
     strict_schema: bool,
     review: Option<editor_ai::Review>,
@@ -225,19 +229,49 @@ impl Editor {
             };
         let drawing_name =
             cx.new(|cx| Entry::new(drawings.active().name.clone(), "Drawing name", false, cx));
-        let settings = editor_ai::AiSettings::load();
-        let key_endpoint = settings.base_url.trim().to_owned();
-        let endpoint =
-            cx.new(|cx| Entry::new(settings.base_url, "https://provider.example/v1", false, cx));
-        let model = cx.new(|cx| Entry::new(settings.model, "Model name", false, cx));
-        let api_key = cx.new(|cx| {
-            Entry::new(
-                editor_ai::environment_key(),
-                "Optional session key",
-                true,
-                cx,
-            )
-        });
+        let (settings, settings_error) = match settings::AppSettings::load() {
+            Ok(settings) => (settings.architecture, None),
+            Err(error) => (settings::ModelSettings::default(), Some(error)),
+        };
+        let saved_url = settings.base_url.trim().to_owned();
+        let base_url = std::env::var("ASCIIFLOW_AI_BASE_URL").unwrap_or(settings.base_url);
+        let model_name = std::env::var("ASCIIFLOW_AI_MODEL").unwrap_or(settings.model);
+        let environment_key = editor_ai::environment_key();
+        let key_endpoint = base_url.trim().to_owned();
+        let saved_key = if environment_key.is_empty() && key_endpoint == saved_url {
+            settings.key
+        } else {
+            None
+        };
+        let settings_pending = saved_key.is_some();
+        if let Some(key) = saved_key {
+            let endpoint = key_endpoint.clone();
+            let work = cx.background_executor().spawn(async move {
+                let key = key.load(&endpoint);
+                (endpoint, key)
+            });
+            cx.spawn(async move |editor, cx| {
+                let (endpoint, key) = work.await;
+                let _ = editor.update(cx, |editor, cx| {
+                    editor.settings_pending = false;
+                    if editor.key_endpoint == endpoint && editor.api_key.read(cx).value().is_empty()
+                    {
+                        match key {
+                            Ok(key) => editor.api_key.update(cx, |entry, cx| entry.set(&key, cx)),
+                            Err(error) => {
+                                editor.saved_key_unread = true;
+                                editor.message = Some(error.into());
+                            }
+                        }
+                    }
+                    cx.notify();
+                });
+            })
+            .detach();
+        }
+        let endpoint = cx.new(|cx| Entry::new(base_url, "https://provider.example/v1", false, cx));
+        let model = cx.new(|cx| Entry::new(model_name, "Model name", false, cx));
+        let api_key = cx.new(|cx| Entry::new(environment_key, "Optional API key", true, cx));
         let endpoint_tracking = cx.observe(&endpoint, |editor, endpoint, cx| {
             let url = endpoint.read(cx).value().trim().to_owned();
             if editor.key_endpoint != url {
@@ -295,12 +329,14 @@ impl Editor {
             _endpoint_tracking: endpoint_tracking,
             model,
             api_key,
+            settings_pending,
+            saved_key_unread: false,
             conversion_pending: false,
             strict_schema: settings.strict_schema,
             review: None,
             review_generation: 0,
             mermaid_review: None,
-            message: None,
+            message: settings_error,
             file_pending: false,
         }
     }
@@ -856,6 +892,7 @@ impl Editor {
                             ("library", "Drawings", Panel::Drawings),
                             ("templates", "Templates", Panel::Templates),
                             ("ai-rendering", "Diagram rendering", Panel::Ai),
+                            ("settings", "Settings", Panel::Settings),
                         ]
                         .map(|(id, label, panel)| {
                             panel_button(

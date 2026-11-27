@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="ASCIIFlow Desktop is a native editor for drawing flowcharts, architecture sketches, and sequence diagrams on a plain-text canvas.">
+  <meta name="color-scheme" content="light">
+  <title>ASCIIFlow Desktop — Draw in plain text</title>
+  <link rel="icon" href="assets/favicon.png" type="image/png">
+  <link rel="stylesheet" href="styles.css">
+  <script src="download.js" defer></script>
+</head>
+<body>
+  <a class="skip" href="#main">Skip to content</a>
+  <header class="site-header">
+    <div class="shell header-inner">
+      <a class="brand" href="./" aria-label="ASCIIFlow Desktop home">
+        <img src="assets/asciiflow-mark.png" width="29" height="29" alt="">
+        <span>ASCIIFlow <span class="brand-desktop">Desktop</span></span>
+      </a>
+      <nav aria-label="Main navigation">
+        <a href="#workflow">Workflow</a>
+        <a href="#formats">Export formats</a>
+        <a class="nav-download" href="#download">Download</a>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main">
+    <section class="hero shell" aria-labelledby="hero-title">
+      <div class="hero-copy">
+        <h1 id="hero-title">Draw in<br class="hero-break"> plain text.</h1>
+        <p>Sketch a flowchart, system, or sequence on a character grid. Then paste it into a README, a code comment, or anywhere text goes.</p>
+        <div class="hero-actions">
+          <a class="button primary" id="hero-download" href="#download">Get ASCIIFlow Desktop</a>
+          <a class="text-link" href="#workflow">See how it works <span aria-hidden="true">↓</span></a>
+        </div>
+        <p class="platforms" id="hero-platforms">Windows, Linux, and macOS</p>
+      </div>
+      <figure class="hero-figure">
+        <div class="editor-frame">
+          <img src="assets/editor.png" width="1684" height="1157" alt="ASCIIFlow Desktop showing boxes for Request, Router, Response, and Fallback connected by ASCII arrows.">
+        </div>
+        <figcaption>A request flow drawn with boxes, arrows, and text.</figcaption>
+      </figure>
+    </section>
+
+    <section class="workflow section" id="workflow" aria-labelledby="workflow-title">
+      <div class="shell">
+        <div class="section-heading">
+          <h2 id="workflow-title">From sketch to shared diagram</h2>
+          <p>Draw directly on the grid or open a template for a familiar layout, then keep working in the same drawing.</p>
+        </div>
+        <ol class="steps">
+          <li><h3>Sketch the idea</h3><p>Place boxes, connect them with arrows, and type anywhere. Select and move cells as the diagram changes.</p></li>
+          <li><h3>Pick up where you left off</h3><p>Edits autosave locally. The drawing library lets you reopen, rename, or duplicate a diagram.</p></li>
+          <li><h3>Share the result</h3><p>Copy the whole canvas or a selection as text. Export an SVG or PNG when you need an image.</p></li>
+        </ol>
+      </div>
+    </section>
+
+    <section class="shell section formats" id="formats" aria-labelledby="formats-title">
+      <div class="formats-copy">
+        <h2 id="formats-title">Convert one region at a time</h2>
+        <p>Mark the cells you want to convert. The Mermaid preview shows the selected ASCII and generated source together so you can check the result before copying it or saving a <code>.mmd</code> file.</p>
+        <p>Start with a pre-drawn flowchart, sequence diagram, swimlane, or architecture template. Mermaid conversion runs locally.</p>
+      </div>
+      <figure class="format-figure">
+        <div class="editor-frame">
+          <img src="assets/mermaid.png" width="1684" height="1157" loading="lazy" alt="Mermaid preview with the source ASCII sequence diagram above generated Mermaid participants and ordered messages.">
+        </div>
+        <figcaption>A marked sequence diagram and its Mermaid source.</figcaption>
+      </figure>
+    </section>
+
+    <section class="architecture section" id="architecture" aria-labelledby="architecture-title">
+      <div class="shell">
+        <div class="architecture-intro">
+          <div class="section-heading">
+            <h2 id="architecture-title">Need a styled architecture diagram?</h2>
+            <p>Connect an OpenAI-compatible endpoint, review the inferred components and connections, then export standalone HTML or SVG. Only the ASCII shown in the send preview is submitted when you choose to send it.</p>
+          </div>
+          <figure class="architecture-source">
+            <figcaption>ASCII input · Order processing</figcaption>
+            <pre><code>[Storefront]
+      |
+    HTTPS
++-----|-- Private network ---------------+
+|     v                                  |
+| [Gateway] -- submit --&gt; [Orders API]   |
+|                              |         |
+|                            write       |
+|                              v         |
+|                         [Orders DB]    |
++----------------------------------------+</code></pre>
+          </figure>
+        </div>
+        <figure class="architecture-example">
+          <div class="editor-frame architecture-preview" tabindex="0" role="region" aria-label="Scrollable architecture diagram">
+            <img src="assets/order-processing.svg" width="1472" height="356" loading="lazy" alt="A storefront sends HTTPS requests to a gateway. The gateway submits orders to an API, which writes to a database. The gateway, API, and database sit inside a private network.">
+          </div>
+          <figcaption>
+            <span>Styled export rendered from a sample graph.</span>
+            <span class="architecture-links">
+              <a href="assets/order-processing.html">Open standalone HTML</a>
+              <a href="assets/order-processing.svg" download>Download SVG</a>
+            </span>
+          </figcaption>
+        </figure>
+      </div>
+    </section>
+
+    <section class="download section" id="download" aria-labelledby="download-title">
+      <div class="shell download-inner">
+        <div>
+          <h2 id="download-title">Install ASCIIFlow Desktop</h2>
+          <p>Download version 0.1.0 for Windows x86-64, Linux x86-64, or macOS Apple Silicon, or install it from your terminal.</p>
+        </div>
+        <div class="download-options">
+          <a class="button primary" id="download-windows" href="https://github.com/3rg0n/asciiflow-desktop/releases/download/0.1.0/asciiflow-desktop-0.1.0-windows-x86_64.zip">Download Windows <span class="file-type">ZIP</span></a>
+          <a class="button secondary" id="download-linux" href="https://github.com/3rg0n/asciiflow-desktop/releases/download/0.1.0/asciiflow-desktop-0.1.0-linux-x86_64.tar.gz">Download Linux <span class="file-type">TAR.GZ</span></a>
+          <div class="macos-downloads" id="download-macos" role="group" aria-label="macOS downloads">
+            <a class="button secondary" href="https://github.com/3rg0n/asciiflow-desktop/releases/download/0.1.0/asciiflow-desktop-0.1.0-macos-aarch64.tar.gz">macOS Apple Silicon <span class="file-type">TAR.GZ</span></a>
+          </div>
+          <a class="text-link" href="#install-cli-title">Command-line install</a>
+          <a class="text-link" href="https://github.com/3rg0n/asciiflow-desktop/releases/tag/0.1.0">Release notes and checksums</a>
+        </div>
+      </div>
+      <section class="shell install-cli" aria-labelledby="install-cli-title">
+        <h3 id="install-cli-title">Install from the command line</h3>
+        <p>Paste the command for your platform. The installer verifies the download and adds the app to your PATH.</p>
+        <div class="install-platforms">
+          <div>
+            <h4>Windows x86-64</h4>
+            <p>Run in PowerShell.</p>
+            <div class="install-command">
+              <pre><code>irm https://raw.githubusercontent.com/3rg0n/asciiflow-desktop/main/docs/install.ps1 | iex</code></pre>
+            </div>
+          </div>
+          <div>
+            <h4>Linux and macOS</h4>
+            <p>Run in your terminal. The installer selects the archive for your platform.</p>
+            <div class="install-command">
+              <pre><code>curl -fsSL https://raw.githubusercontent.com/3rg0n/asciiflow-desktop/main/install.sh | bash</code></pre>
+            </div>
+          </div>
+        </div>
+        <p>Open a new terminal after installing and run <code>asciiflow-desktop</code>.</p>
+      </section>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="shell footer-inner">
+      <p>Inspired by <a href="https://asciiflow.com/">the original ASCIIFlow web editor</a> by Lewis Hemens. This desktop implementation uses the upstream artwork under its <a href="assets/LICENSE-ASCIIFlow">MIT notice</a>.</p>
+      <a href="https://github.com/3rg0n/asciiflow-desktop">GitHub repository</a>
+    </div>
+  </footer>
+</body>
+</html>

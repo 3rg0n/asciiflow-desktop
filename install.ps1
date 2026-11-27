@@ -7,13 +7,15 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
-if ([Runtime.InteropServices.RuntimeInformation]::OSArchitecture -ne 'X64') {
-    throw 'This release includes a Windows x86-64 package.'
+$platform = switch ([Runtime.InteropServices.RuntimeInformation]::OSArchitecture) {
+    'X64' { 'windows-x86_64' }
+    'Arm64' { 'windows-aarch64' }
+    default { throw 'No release package for this Windows architecture.' }
 }
 
 $installDir = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($InstallDir)
 $releaseDir = Join-Path (Join-Path $PSScriptRoot 'dist') $Version
-$package = "asciiflow-desktop-$Version-windows-x86_64.zip"
+$package = "asciiflow-desktop-$Version-$platform.zip"
 $archive = Join-Path $releaseDir $package
 if (!(Test-Path -LiteralPath $archive -PathType Leaf)) {
     throw "Missing package $archive. Check out the release or download the archive and SHA256SUMS into dist/$Version."
