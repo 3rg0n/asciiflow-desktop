@@ -20,7 +20,7 @@ The script downloads the package for your platform from the release, installs it
 
 The Linux package targets glibc 2.36 or later. On Debian or Ubuntu, ensure `libfontconfig1`, `libfreetype6`, `libxkbcommon0`, `libxkbcommon-x11-0`, `libxcb1`, `libwayland-client0`, `libwayland-cursor0`, and `libvulkan1` are installed, along with a Vulkan driver.
 
-The macOS package is built for macOS 11 or later and verified on macOS 27.3. The executable is ad-hoc signed and not notarized. The installer doesn't mark it as quarantined, so it opens directly. If you download the archive with a browser instead, clear the quarantine flag after extracting it with `xattr -d com.apple.quarantine asciiflow-desktop`. Otherwise macOS refuses to open it. The 0.1.0 package has no app menu, so close the window to quit. Later builds add **Quit ASCIIFlow Desktop** with `Cmd+Q`.
+The macOS package is built for macOS 11 or later and verified on macOS 27.3. The executable is ad-hoc signed and not notarized. The installer doesn't mark it as quarantined, so it opens directly. If you download the archive with a browser instead, clear the quarantine flag after extracting it with `xattr -d com.apple.quarantine asciiflow-desktop`. Otherwise macOS refuses to open it. Quit with **Quit ASCIIFlow Desktop** in the app menu or `Cmd+Q`.
 
 **macOS Intel** packages are pending native verification.
 
