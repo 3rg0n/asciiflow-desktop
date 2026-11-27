@@ -28,13 +28,13 @@ download_dir=
 staged=
 trap 'rm -f -- "$staged"; [ -z "$download_dir" ] || rm -rf -- "$download_dir"' EXIT
 # Use the package in a checkout of this repository when the script runs from
-# one. Otherwise, as with `curl ... | sh`, download it from the GitHub release.
+# one. Otherwise, as with `curl ... | bash`, download it from the repository.
 release_dir=
 if [ -f "$0" ]; then
     release_dir="$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)/dist/$version"
 fi
 if [ -z "$release_dir" ] || [ ! -f "$release_dir/$package" ] || [ ! -f "$release_dir/SHA256SUMS" ]; then
-    base_url=${ASCIIFLOW_RELEASE_URL:-https://github.com/3rg0n/asciiflow-desktop/releases/download/$version}
+    base_url=${ASCIIFLOW_RELEASE_URL:-https://raw.githubusercontent.com/3rg0n/asciiflow-desktop/main/dist/$version}
     download_dir=$(mktemp -d "${TMPDIR:-/tmp}/asciiflow.XXXXXXXX")
     release_dir=$download_dir
     for file in "$package" SHA256SUMS; do

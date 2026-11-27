@@ -7,8 +7,8 @@
     }
 
     $version = '0.1.0'
-    $repository = 'https://github.com/3rg0n/asciiflow-desktop'
-    $release = "$repository/releases/download/$version"
+    $repository = 'https://raw.githubusercontent.com/3rg0n/asciiflow-desktop/main'
+    $release = "$repository/dist/$version"
     $package = "asciiflow-desktop-$version-$platform.zip"
     $stage = New-Item -ItemType Directory -Path (Join-Path ([IO.Path]::GetTempPath()) ([guid]::NewGuid().ToString('N')))
     try {
@@ -17,7 +17,7 @@
         $installer = Join-Path $stage.FullName 'install.ps1'
         Invoke-WebRequest -UseBasicParsing -Uri "$release/$package" -OutFile (Join-Path $dist $package)
         Invoke-WebRequest -UseBasicParsing -Uri "$release/SHA256SUMS" -OutFile (Join-Path $dist 'SHA256SUMS')
-        Invoke-WebRequest -UseBasicParsing -Uri "https://raw.githubusercontent.com/3rg0n/asciiflow-desktop/$version/install.ps1" -OutFile $installer
+        Invoke-WebRequest -UseBasicParsing -Uri "$repository/install.ps1" -OutFile $installer
         & $installer -Version $version
     } finally {
         Remove-Item -LiteralPath $stage.FullName -Recurse -Force

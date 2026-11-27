@@ -1,6 +1,6 @@
 # Distribution packages
 
-The `dist/<version>/` directory contains the archives and `SHA256SUMS` for that release. The same packages are available on the matching GitHub Release.
+The `dist/<version>/` directory contains the archives and `SHA256SUMS` used by the project site and its installers.
 
 | Platform | Archive | Executable inside the archive |
 | --- | --- | --- |
@@ -18,4 +18,4 @@ For Windows ARM64, build with `cargo build --locked --release --target aarch64-p
 
 The macOS Apple Silicon package is built natively with full Xcode and the Metal toolchain. Its minimum deployment target is macOS 11. It is ad-hoc signed without notarization. The macOS Intel package is pending native verification. See [docs/verification](../docs/verification) for platform test records.
 
-`install.sh` uses the package in `dist/<version>/` when it runs from a checkout. Otherwise it downloads the package and `SHA256SUMS` from the matching GitHub Release over HTTPS. Set `ASCIIFLOW_RELEASE_URL` to a directory URL that holds both files to install from a mirror. Each release must include the updated `SHA256SUMS` as an asset.
+`install.sh` uses the package in `dist/<version>/` when it runs from a checkout. Otherwise it downloads the package and `SHA256SUMS` from the repository over HTTPS. Set `ASCIIFLOW_RELEASE_URL` to a directory URL that holds both files to install from a mirror.
