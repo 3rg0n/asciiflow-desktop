@@ -1,0 +1,20 @@
+[package]
+name = "asciiflow-desktop"
+version = "0.1.0"
+edition = "2024"
+description = "A native ASCII diagram editor built with Rust and GPUI"
+
+[dependencies]
+dirs = "5"
+gpui = "=0.2.2"
+reqwest = { package = "zed-reqwest", version = "=0.12.15-zed", default-features = false, features = ["blocking", "json", "rustls-tls-native-roots"] }
+resvg = { version = "0.45.1", default-features = false, features = ["text", "system-fonts"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tempfile = "3"
+
+[target.'cfg(windows)'.build-dependencies]
+embed-resource = "3"
+
+[target.'cfg(unix)'.dependencies]
+libc = "0.2"

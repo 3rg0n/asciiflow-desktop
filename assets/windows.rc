@@ -1,0 +1,2 @@
+// GPUI loads the main window icon from resource ID 1.
+1 ICON "assets/asciiflow.ico"
