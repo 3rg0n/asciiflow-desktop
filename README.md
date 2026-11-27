@@ -2,11 +2,11 @@
 
 A desktop editor for plain-text diagrams, inspired by ASCIIFlow and built in Rust with Zed’s GPUI. Use it to draw diagrams you can paste into a README, source comment, or terminal. [ASCIIFlow](https://github.com/lewish/asciiflow) · [GPUI](https://github.com/zed-industries/zed/tree/main/crates/gpui)
 
-The [product walkthrough](docs/index.html) lives in `docs/`. Preview it locally with `python -m http.server 8000 --bind 127.0.0.1 --directory docs`, then open `http://127.0.0.1:8000/`. Publish `main` → `/docs` with GitHub Pages. Before publishing, make the repository public and verify that the release includes all archives linked from the page and their checksums. [GitHub Pages documentation](https://docs.github.com/en/pages/getting-started-with-github-pages/creating-a-github-pages-site)
+Visit the [ASCIIFlow Desktop website](https://3rg0n.github.io/asciiflow-desktop/) for a walkthrough, downloads, and one-line installers.
 
 ## Install a release
 
-Packages for each release are on the [releases page](https://github.com/3rg0n/asciiflow-desktop/releases). The installers verify each package against the release's `SHA256SUMS` before replacing the executable.
+Find the current downloads on the [ASCIIFlow Desktop website](https://3rg0n.github.io/asciiflow-desktop/#download). The installers verify each package against `SHA256SUMS` before replacing the executable.
 
 **Linux x86-64 and macOS Apple Silicon**
 
@@ -16,7 +16,7 @@ curl -fsSL https://raw.githubusercontent.com/3rg0n/asciiflow-desktop/main/instal
 asciiflow-desktop
 ```
 
-The script downloads the package for your platform from the release, installs it into `~/.local/bin`, and updates your shell startup configuration as needed. To pass options, use `bash -s --` followed by them, for example `| bash -s -- --prefix "$HOME/bin" --no-path`. Use `--prefix` to choose a different bin directory, `--no-path` to skip the PATH change, or `--version` to install another release. From a checkout with the corresponding package, `sh ./install.sh` uses `dist/`.
+The script downloads the package for your platform, installs it into `~/.local/bin`, and updates your shell startup configuration as needed. To pass options, use `bash -s --` followed by them, for example `| bash -s -- --prefix "$HOME/bin" --no-path`. Use `--prefix` to choose a different bin directory, `--no-path` to skip the PATH change, or `--version` to install another release. From a checkout with the corresponding package, `sh ./install.sh` uses `dist/`.
 
 The Linux package targets glibc 2.36 or later. On Debian or Ubuntu, ensure `libfontconfig1`, `libfreetype6`, `libxkbcommon0`, `libxkbcommon-x11-0`, `libxcb1`, `libwayland-client0`, `libwayland-cursor0`, and `libvulkan1` are installed, along with a Vulkan driver.
 
@@ -26,13 +26,13 @@ The macOS package is built for macOS 11 or later and verified on macOS 27.3. The
 
 **Windows x86-64**
 
-Once the repository and release are public, run this in PowerShell.
+Run this in PowerShell.
 
 ```powershell
 irm https://raw.githubusercontent.com/3rg0n/asciiflow-desktop/main/docs/install.ps1 | iex
 ```
 
-For custom install options or while the repository is private, download the 0.1.0 release source or clone the repository at tag `0.1.0`, then run the installer from that directory.
+For custom install options, run the installer from a checkout containing the corresponding `dist/` package.
 
 ```powershell
 .\install.ps1
