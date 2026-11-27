@@ -1,16 +1,14 @@
-use std::{fs, sync::Arc};
-
-use gpui::{
-    Context, Div, FontWeight, Image, ImageFormat, ObjectFit, div, img, prelude::*, px, rgb,
-};
-use serde::{Deserialize, Serialize};
+use std::sync::Arc;
 
 use crate::{
     BORDER, Editor, MUTED, PANEL, Panel,
     architecture::{self, ArchitectureGraph, ConversionConfig},
     panel_button,
+    settings::AppSettings,
     templates::ascii_preview,
-    text_files,
+};
+use gpui::{
+    Context, Div, FontWeight, Image, ImageFormat, ObjectFit, div, img, prelude::*, px, rgb,
 };
 
 pub(super) fn environment_key() -> String {
@@ -21,58 +19,16 @@ pub(super) fn environment_key() -> String {
     }
 }
 
-#[derive(Deserialize, Serialize)]
-pub(super) struct AiSettings {
-    pub base_url: String,
-    pub model: String,
-    #[serde(default)]
-    pub strict_schema: bool,
-}
-
-impl AiSettings {
-    pub fn load() -> Self {
-        let stored: Option<Self> = crate::drawings::data_directory()
-            .ok()
-            .map(|dir| dir.join("ai-settings.json"))
-            .and_then(|path| text_files::read_limited(&path, 16_384).ok())
-            .and_then(|data| serde_json::from_slice(&data).ok());
-        let mut settings = stored.unwrap_or(Self {
-            base_url: "http://127.0.0.1:11434/v1".into(),
-            model: String::new(),
-            strict_schema: false,
-        });
-        if let Ok(base_url) = std::env::var("ASCIIFLOW_AI_BASE_URL") {
-            settings.base_url = base_url;
-        }
-        if let Ok(model) = std::env::var("ASCIIFLOW_AI_MODEL") {
-            settings.model = model;
-        }
-        settings
-    }
-
-    fn save(config: &ConversionConfig) -> Result<(), String> {
-        config.endpoint()?;
-        let directory = crate::drawings::data_directory().map_err(|error| error.to_string())?;
-        fs::create_dir_all(&directory).map_err(|error| error.to_string())?;
-        let settings = Self {
-            base_url: config.base_url.clone(),
-            model: config.model.clone(),
-            strict_schema: config.strict_schema,
-        };
-        let data = serde_json::to_vec_pretty(&settings).map_err(|error| error.to_string())?;
-        text_files::write_bytes(&directory.join("ai-settings.json"), &data)
-            .map_err(|error| error.to_string())
-    }
-}
-
 pub(super) struct Review {
     source: String,
     drawing_name: String,
     model: String,
+    reported_model: Option<String>,
     graph: ArchitectureGraph,
     image: Option<Arc<Image>>,
     generation: u64,
     revision: u64,
+    confirmed: bool,
 }
 
 impl Editor {
@@ -108,8 +64,7 @@ impl Editor {
         Ok(source)
     }
 
-    pub(super) fn ai_panel(&self, cx: &mut Context<Self>) -> Div {
-        let source = self.architecture_source();
+    pub(super) fn settings_panel(&self, cx: &mut Context<Self>) -> Div {
         div()
             .flex()
             .flex_col()
@@ -117,7 +72,7 @@ impl Editor {
             .child(
                 div()
                     .text_color(rgb(MUTED))
-                    .child("Choose an OpenAI-compatible endpoint for architecture rendering."),
+                    .child("Configure the OpenAI-compatible model used across all drawings."),
             )
             .child(div().child("Endpoint URL").child(self.endpoint.clone()))
             .child(div().child("Model").child(self.model.clone()))
@@ -135,9 +90,66 @@ impl Editor {
             ))
             .child(
                 div()
-                    .child("API key (optional, this session)")
+                    .child("API key (optional)")
                     .child(self.api_key.clone()),
             )
+            .child(div().text_color(rgb(MUTED)).child(
+                "Saving stores the key in the OS credential manager or in settings.json if no credential manager is available.",
+            ))
+            .child(panel_button(
+                "save-settings",
+                if self.settings_pending { "Please wait…" } else { "Save settings" },
+                cx.listener(|editor, _, _, cx| editor.save_settings(cx)),
+            ))
+    }
+
+    fn save_settings(&mut self, cx: &mut Context<Self>) {
+        if self.settings_pending {
+            return;
+        }
+        let mut config = self.ai_config(cx);
+        let environment_key = environment_key();
+        let session_key = !config.api_key.is_empty()
+            && config.api_key == environment_key.trim()
+            && std::env::var("ASCIIFLOW_AI_BASE_URL")
+                .is_ok_and(|endpoint| config.base_url == endpoint.trim());
+        if session_key {
+            config.api_key.clear();
+        }
+        let preserve_unread_key =
+            session_key || (self.saved_key_unread && config.api_key.is_empty());
+        self.settings_pending = true;
+        let work = cx
+            .background_executor()
+            .spawn(async move { AppSettings::save(config, preserve_unread_key) });
+        cx.spawn(async move |editor, cx| {
+            let result = work.await;
+            let _ = editor.update(cx, |editor, cx| {
+                editor.settings_pending = false;
+                if result.is_ok() && !preserve_unread_key {
+                    editor.saved_key_unread = false;
+                }
+                editor.message = Some(result.map_or_else(|error| error, str::to_owned));
+                cx.notify();
+            });
+        })
+        .detach();
+        cx.notify();
+    }
+
+    pub(super) fn ai_panel(&self, cx: &mut Context<Self>) -> Div {
+        let source = self.architecture_source();
+        let endpoint = self.endpoint.read(cx).value().trim();
+        let model = self.model.read(cx).value().trim();
+        div()
+            .flex()
+            .flex_col()
+            .gap(px(12.0))
+            .child(div().text_color(rgb(MUTED)).child(if model.is_empty() {
+                "Choose an OpenAI-compatible endpoint and model in Settings.".to_owned()
+            } else {
+                format!("{model} · {endpoint}")
+            }))
             .child(
                 div()
                     .flex()
@@ -145,16 +157,10 @@ impl Editor {
                     .gap(px(8.0))
                     .flex_wrap()
                     .child(panel_button(
-                        "remember-ai",
-                        "Remember endpoint and model",
-                        cx.listener(|editor, _, _, cx| {
-                            let config = editor.ai_config(cx);
-                            editor.message =
-                                Some(AiSettings::save(&config).map_or_else(
-                                    |error| error,
-                                    |_| "Endpoint and model saved".into(),
-                                ));
-                            cx.notify();
+                        "open-settings",
+                        "Open Settings",
+                        cx.listener(|editor, _, window, cx| {
+                            editor.command(crate::Command::Show(Panel::Settings), window, cx);
                         }),
                     ))
                     .when(self.review.is_some(), |row| {
@@ -208,7 +214,7 @@ impl Editor {
     }
 
     fn convert_architecture(&mut self, cx: &mut Context<Self>) {
-        if self.conversion_pending {
+        if self.conversion_pending || self.settings_pending {
             return;
         }
         let config = self.ai_config(cx);
@@ -228,16 +234,21 @@ impl Editor {
         let generation = self.review_generation;
         let drawing_name = self.drawings.active().name.clone();
         let work = cx.background_executor().spawn(async move {
-            let graph = architecture::convert_ascii(&config, &source)?;
+            let architecture::Conversion {
+                graph,
+                reported_model,
+            } = architecture::convert_ascii(&config, &source)?;
             let image = preview_image(&graph)?;
             Ok::<_, String>(Review {
                 source,
                 drawing_name,
                 model: config.model,
+                reported_model,
                 graph,
                 image: Some(image),
                 generation,
                 revision: 0,
+                confirmed: false,
             })
         });
         cx.spawn(async move |editor, cx| {
@@ -304,6 +315,17 @@ impl Editor {
                 "Source drawing: {} · Requested model: {}",
                 review.drawing_name, review.model
             )))
+            .child(
+                div()
+                    .text_color(rgb(MUTED))
+                    .child(match &review.reported_model {
+                        Some(model) if model != &review.model => {
+                            format!("Provider-reported model: {model} (may be an alias)")
+                        }
+                        Some(model) => format!("Provider-reported model: {model}"),
+                        None => "Provider-reported model unavailable".into(),
+                    }),
+            )
             .children(
                 review
                     .graph
@@ -311,21 +333,39 @@ impl Editor {
                     .iter()
                     .map(|warning| div().text_color(rgb(0x8a4915)).child(warning.clone())),
             )
-            .child(
-                div()
-                    .flex()
-                    .gap(px(8.0))
-                    .child(panel_button(
-                        "architecture-html",
-                        "Export HTML",
-                        cx.listener(|editor, _, _, cx| editor.export_architecture(true, cx)),
-                    ))
-                    .child(panel_button(
-                        "architecture-svg",
-                        "Export SVG",
-                        cx.listener(|editor, _, _, cx| editor.export_architecture(false, cx)),
-                    )),
-            )
+            .when(!review.confirmed && review.image.is_some(), |panel| {
+                panel.child(panel_button(
+                    "confirm-architecture-review",
+                    "Confirm source review",
+                    cx.listener(|editor, _, _, cx| {
+                        if let Some(review) = &mut editor.review
+                            && review.image.is_some()
+                        {
+                            review.confirmed = true;
+                            editor.message =
+                                Some("Source reviewed. HTML and SVG exports are available.".into());
+                            cx.notify();
+                        }
+                    }),
+                ))
+            })
+            .when(review.confirmed, |panel| {
+                panel.child(
+                    div()
+                        .flex()
+                        .gap(px(8.0))
+                        .child(panel_button(
+                            "architecture-html",
+                            "Export HTML",
+                            cx.listener(|editor, _, _, cx| editor.export_architecture(true, cx)),
+                        ))
+                        .child(panel_button(
+                            "architecture-svg",
+                            "Export SVG",
+                            cx.listener(|editor, _, _, cx| editor.export_architecture(false, cx)),
+                        )),
+                )
+            })
             .child(div().font_weight(FontWeight::SEMIBOLD).child("Components"))
             .children(review.graph.nodes.iter().enumerate().map(|(index, node)| {
                 let group = node
@@ -478,6 +518,7 @@ impl Editor {
             return;
         }
         review.revision += 1;
+        review.confirmed = false;
         let revision = review.revision;
         let generation = review.generation;
         let work = cx
@@ -515,6 +556,11 @@ impl Editor {
         };
         if review.image.is_none() {
             self.message = Some("Wait for the updated preview before exporting.".into());
+            cx.notify();
+            return;
+        }
+        if !review.confirmed {
+            self.message = Some("Confirm the source review before exporting.".into());
             cx.notify();
             return;
         }

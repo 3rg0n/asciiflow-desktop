@@ -333,6 +333,7 @@ impl Editor {
             Panel::Drawings => ("Drawings", self.drawing_panel(cx)),
             Panel::Export => ("Export canvas", self.export_panel(cx)),
             Panel::Ai => ("Diagram rendering", self.ai_panel(cx)),
+            Panel::Settings => ("Settings", self.settings_panel(cx)),
             Panel::Templates => ("ASCII templates", self.templates_panel(cx)),
             Panel::Review => ("Review architecture diagram", self.review_panel(cx)),
             Panel::Mermaid => ("Mermaid preview", self.mermaid_panel(cx)),
