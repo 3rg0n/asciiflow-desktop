@@ -519,6 +519,8 @@ impl Editor {
         }
         review.revision += 1;
         review.confirmed = false;
+        self.message =
+            Some("Diagram changed. Confirm the source review again before exporting.".into());
         let revision = review.revision;
         let generation = review.generation;
         let work = cx
