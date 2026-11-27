@@ -4,9 +4,27 @@ A desktop editor for plain-text diagrams, inspired by ASCIIFlow and built in Rus
 
 ## Install a release
 
-Check out tag `0.1.0` with access to this private repository, then run the installer from the checkout. The installers verify the package against `dist/0.1.0/SHA256SUMS` before replacing the executable. You can also download the archives from the [0.1.0 release](https://github.com/3rg0n/asciiflow-desktop/releases/tag/0.1.0) and extract them yourself.
+Packages for each release are on the [releases page](https://github.com/3rg0n/asciiflow-desktop/releases). The installers verify each package against the release's `SHA256SUMS` before replacing the executable.
+
+**Linux x86-64 and macOS Apple Silicon**
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/3rg0n/asciiflow-desktop/main/install.sh | sh
+# Open a new shell, then run:
+asciiflow-desktop
+```
+
+The script downloads the package for your platform from the release, installs it into `~/.local/bin`, and updates your shell startup configuration as needed. To pass options, use `sh -s --` followed by them, for example `| sh -s -- --prefix "$HOME/bin" --no-path`. Use `--prefix` to choose a different bin directory, `--no-path` to skip the PATH change, or `--version` to install another release. From a checkout of a release tag, `sh ./install.sh` uses the package in `dist/` without downloading.
+
+The Linux package targets glibc 2.36 or later. On Debian or Ubuntu, ensure `libfontconfig1`, `libfreetype6`, `libxkbcommon0`, `libxkbcommon-x11-0`, `libxcb1`, `libwayland-client0`, `libwayland-cursor0`, and `libvulkan1` are installed, along with a Vulkan driver.
+
+The macOS package is built for macOS 11 or later and verified on macOS 27.3. The executable is ad-hoc signed and not notarized. The installer doesn't mark it as quarantined, so it opens directly. If you download the archive with a browser instead, clear the quarantine flag after extracting it with `xattr -d com.apple.quarantine asciiflow-desktop`. Otherwise macOS refuses to open it. The 0.1.0 package has no app menu, so close the window to quit. Later builds add **Quit ASCIIFlow Desktop** with `Cmd+Q`.
+
+**macOS Intel** packages are pending native verification.
 
 **Windows x86-64**
+
+Download the 0.1.0 release source or clone the repository at tag `0.1.0`, then run the installer from that directory.
 
 ```powershell
 .\install.ps1
@@ -14,28 +32,6 @@ asciiflow-desktop
 ```
 
 The script installs the GUI executable in `%LOCALAPPDATA%\Programs\ASCIIFlow Desktop` and adds that directory to your user PATH. Use `-InstallDir` to choose a different directory or `-NoPath` to skip the PATH change. Close any running copy before upgrading.
-
-**Linux x86-64**
-
-```sh
-sh ./install.sh
-# Open a new shell, then run:
-asciiflow-desktop
-```
-
-The script installs into `~/.local/bin` and updates your shell startup configuration as needed. Use `--prefix` to choose a different bin directory or `--no-path` to skip the PATH change. The Linux package targets glibc 2.36 or later. On Debian or Ubuntu, ensure `libfontconfig1`, `libfreetype6`, `libxkbcommon0`, `libxkbcommon-x11-0`, `libxcb1`, `libwayland-client0`, `libwayland-cursor0`, and `libvulkan1` are installed, along with a Vulkan driver.
-
-**macOS Apple Silicon**
-
-```sh
-sh ./install.sh
-# Open a new shell, then run:
-asciiflow-desktop
-```
-
-The same shell installer and options apply as on Linux. The package is built for macOS 11 or later on Apple Silicon and verified on macOS 27.3. The executable is ad-hoc signed and not notarized. If you extract an archive downloaded with a browser, clear the quarantine flag first with `xattr -d com.apple.quarantine asciiflow-desktop`. Otherwise macOS refuses to open it. Close the window to quit. Version 0.1.0 has no app menu, so `Cmd+Q` has no effect.
-
-**macOS Intel** packages are pending native verification.
 
 ## Build and run
 
@@ -97,6 +93,7 @@ Use `Cmd` on macOS and `Ctrl` on Windows or Linux.
 | Pan | Scroll, `Shift+scroll` horizontally, or middle-button drag |
 | Zoom | `Mod+scroll` |
 | Return to Select | `Esc` |
+| Quit (macOS) | `Cmd+Q` |
 
 **Drawings** opens the local library. Choose a drawing to reopen it, or rename, duplicate, or delete the current drawing. Edits autosave locally and the last active drawing reopens at launch. **Open** imports a UTF-8 text file as a new drawing. Set `ASCIIFLOW_DATA_DIR` to an absolute path to use a separate local library.
 
