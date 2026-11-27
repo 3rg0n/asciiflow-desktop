@@ -25,7 +25,17 @@ asciiflow-desktop
 
 The script installs into `~/.local/bin` and updates your shell startup configuration as needed. Use `--prefix` to choose a different bin directory or `--no-path` to skip the PATH change. The Linux package targets glibc 2.36 or later. On Debian or Ubuntu, ensure `libfontconfig1`, `libfreetype6`, `libxkbcommon0`, `libxkbcommon-x11-0`, `libxcb1`, `libwayland-client0`, `libwayland-cursor0`, and `libvulkan1` are installed, along with a Vulkan driver.
 
-**macOS** packages are pending native verification. The shell installer recognizes the macOS archive names documented in [dist/README.md](dist/README.md).
+**macOS Apple Silicon**
+
+```sh
+sh ./install.sh
+# Open a new shell, then run:
+asciiflow-desktop
+```
+
+The same shell installer and options apply as on Linux. The package is built for macOS 11 or later on Apple Silicon and verified on macOS 27.3. The executable is ad-hoc signed and not notarized. If you extract an archive downloaded with a browser, clear the quarantine flag first with `xattr -d com.apple.quarantine asciiflow-desktop`. Otherwise macOS refuses to open it. Close the window to quit. Version 0.1.0 has no app menu, so `Cmd+Q` has no effect.
+
+**macOS Intel** packages are pending native verification.
 
 ## Build and run
 

@@ -13,4 +13,4 @@ Each archive puts the executable at its root and includes the upstream artwork n
 
 The Linux x86-64 package is built on Debian 12 with glibc 2.36. It needs a compatible Linux desktop, a Vulkan driver, and the system font and X11/Wayland libraries. The native file picker also needs a desktop portal. The Windows package is a console-free GUI executable.
 
-macOS packaging is pending native verification. See the repository issues for the handoff.
+The macOS Apple Silicon package is built natively with full Xcode and the Metal toolchain. Its minimum deployment target is macOS 11. It is ad-hoc signed without notarization. The macOS Intel package is pending native verification. See [docs/verification](../docs/verification) for platform test records.
